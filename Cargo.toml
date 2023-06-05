@@ -1,0 +1,22 @@
+[package]
+name = "hotel-bot"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dotenv = "0.15.0"
+dotenv_codegen = "0.15.0"
+env_logger = "0.10.0"
+poise = "0.5.5"
+time = "0.3.21"
+tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
+
+[dependencies.serenity]
+default-features = false
+features = [
+    "builder", "cache", "collector", "client", "framework", "gateway", "standard_framework", "utils",
+    "rustls_backend",
+]
+version = "0.11"
