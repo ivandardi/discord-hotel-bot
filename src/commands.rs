@@ -1,17 +1,14 @@
-use serenity::http::CacheHttp;
-use serenity::model::channel::ChannelType;
-use serenity::model::user::User;
-
+use poise::serenity_prelude::*;
 use crate::{Context, Error};
 
 /// Show this help menu
-#[poise::command(prefix_command, track_edits, slash_command)]
+#[poise::command(slash_command)]
 pub async fn help(
     ctx: Context<'_>,
     #[description = "Specific command to show help about"]
     #[autocomplete = "poise::builtins::autocomplete_command"]
     command: Option<String>,
-) -> Result<(), Error> {
+) -> std::result::Result<(), Error> {
     poise::builtins::help(
         ctx,
         command.as_deref(),
@@ -31,7 +28,7 @@ pub async fn help(
 pub async fn ping(
     ctx: Context<'_>,
     #[description = "Hm?"] _message: Option<String>,
-) -> Result<(), Error> {
+) -> std::result::Result<(), Error> {
     ctx.say("Pong!").await?;
     Ok(())
 }
@@ -43,7 +40,7 @@ pub async fn ping(
 pub async fn room_create(
     ctx: Context<'_>,
     #[description = "User that will get a new room"] user: User,
-) -> Result<(), Error> {
+) -> std::result::Result<(), Error> {
     let guild = ctx.guild().expect("Can only be called in a server.");
 
     let author_name = ctx.author().name.to_owned();

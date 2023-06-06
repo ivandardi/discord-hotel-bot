@@ -12,11 +12,3 @@ env_logger = "0.10.0"
 poise = "0.5.5"
 time = "0.3.21"
 tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
-
-[dependencies.serenity]
-default-features = false
-features = [
-    "builder", "cache", "collector", "client", "framework", "gateway", "standard_framework", "utils",
-    "rustls_backend",
-]
-version = "0.11"
