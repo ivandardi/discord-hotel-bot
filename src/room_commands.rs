@@ -1,10 +1,13 @@
 use dotenv_codegen::dotenv;
+use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
+use shuttle_secrets::SecretStore;
+use shuttle_poise::ShuttlePoise;
 use serenity::model::channel::PermissionOverwrite;
 use serenity::model::channel::PermissionOverwriteType;
 use serenity::model::Permissions;
 
-use crate::{Context, Error};
+use crate::types::{Context, Error};
 
 /// Create a new room for a guest.
 ///

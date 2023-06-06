@@ -15,3 +15,4 @@ Cargo.lock
 
 # Misc secret files
 .env
+.*/

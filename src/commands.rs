@@ -1,4 +1,4 @@
-use crate::{Context, Error};
+use crate::types::{Context, Error};
 
 /// Show this help menu
 #[poise::command(slash_command)]

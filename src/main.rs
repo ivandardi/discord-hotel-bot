@@ -2,34 +2,30 @@
 
 use dotenv_codegen::dotenv;
 use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::GuildId;
+
+use anyhow::Context as _;
+use shuttle_poise::ShuttlePoise;
+use shuttle_secrets::SecretStore;
+use types::{Data, Error};
 
 mod commands;
 mod room_commands;
+mod types;
 
-// Types used by all command functions
-type Error = Box<dyn std::error::Error + Send + Sync>;
-
-// Custom user data passed to all command functions
-pub struct Data {}
-
-type Context<'a> = poise::Context<'a, Data, Error>;
-
-#[tokio::main]
-async fn main() {
+#[shuttle_runtime::main]
+async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> ShuttlePoise<Data, Error> {
     env_logger::init();
 
-    let guild_id = dotenv!("DISCORD_GUILD");
-    let guild_id: GuildId = guild_id.parse::<u64>().expect("Failed to parse guild ID").into();
+    let data = Data::new(&secret_store);
 
     let framework = poise::Framework::builder()
         .token(dotenv!("DISCORD_TOKEN"))
         .setup(move |_ctx, _ready, _framework| {
             Box::pin(async move {
                 println!("Registering commands...");
-                poise::builtins::register_in_guild(_ctx, &_framework.options().commands, guild_id).await?;
+                poise::builtins::register_in_guild(_ctx, &_framework.options().commands, serenity::GuildId(data.discord_guild)).await?;
                 println!("Logged in as {}", _ready.user.name);
-                Ok(Data {})
+                Ok(data)
             })
         })
         .options(poise::FrameworkOptions {
@@ -78,9 +74,9 @@ async fn main() {
         )
         .build()
         .await
-        .unwrap();
+        .map_err(shuttle_runtime::CustomError::new)?;
 
-    framework.start().await.unwrap();
+    Ok(framework.into())
 }
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
