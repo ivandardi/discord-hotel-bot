@@ -16,3 +16,5 @@ Cargo.lock
 # Misc secret files
 .env
 .*/
+Secrets.toml
+Secrets.dev.toml

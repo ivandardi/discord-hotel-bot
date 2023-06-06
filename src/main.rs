@@ -14,12 +14,10 @@ mod types;
 
 #[shuttle_runtime::main]
 async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> ShuttlePoise<Data, Error> {
-    env_logger::init();
-
     let data = Data::new(&secret_store);
 
     let framework = poise::Framework::builder()
-        .token(dotenv!("DISCORD_TOKEN"))
+        .token(secret_store.get("DISCORD_TOKEN").unwrap())
         .setup(move |_ctx, _ready, _framework| {
             Box::pin(async move {
                 println!("Registering commands...");

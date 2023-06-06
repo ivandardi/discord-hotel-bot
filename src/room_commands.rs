@@ -21,11 +21,8 @@ pub async fn room_create(
 
     let room_name = format!("room-{}", user.name.to_lowercase());
 
-    let role_everyone = dotenv!("DISCORD_ROLE_EVERYONE");
-    let role_everyone: u64 = role_everyone.parse().expect("Failed to parse role ID");
-
-    let category_rooms = dotenv!("DISCORD_CATEGORY_ROOMS");
-    let category_rooms: u64 = category_rooms.parse().expect("Failed to parse category ID");
+    let role_everyone = ctx.data().discord_role_everyone;
+    let category_rooms = ctx.data().discord_category_rooms;
 
     let permissions = vec![
         PermissionOverwrite {
@@ -48,8 +45,8 @@ pub async fn room_create(
         .category(category_rooms),
     ).await?;
 
-    let discord_role_hotel_member = dotenv!("DISCORD_ROLE_HOTEL_MEMBER");
-    let discord_role_hotel_member: u64 = discord_role_hotel_member.parse().expect("Failed to parse discord_role_hotel_member ID");
+    let discord_role_hotel_member = ctx.data().discord_role_hotel_member;
+    // TODO add this role to the member
 
     ctx.say("Room has been created!").await?;
 
@@ -107,8 +104,7 @@ pub async fn room_name_update(
 /// Enter `/room_open` to open your room's door.
 #[poise::command(slash_command)]
 pub async fn room_open(ctx: Context<'_>) -> Result<(), Error> {
-    let role_everyone = dotenv!("DISCORD_ROLE_EVERYONE");
-    let role_everyone: u64 = role_everyone.parse().expect("Failed to parse role ID");
+    let role_everyone = ctx.data().discord_role_everyone;
 
     let permissions = PermissionOverwrite {
         allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
@@ -128,8 +124,7 @@ pub async fn room_open(ctx: Context<'_>) -> Result<(), Error> {
 /// Enter `/room_close` to close your room's door.
 #[poise::command(slash_command)]
 pub async fn room_close(ctx: Context<'_>) -> Result<(), Error> {
-    let role_everyone = dotenv!("DISCORD_ROLE_EVERYONE");
-    let role_everyone: u64 = role_everyone.parse().expect("Failed to parse role ID");
+    let role_everyone = ctx.data().discord_role_everyone;
 
     let permissions = PermissionOverwrite {
         allow: Default::default(),
