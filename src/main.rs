@@ -40,6 +40,7 @@ async fn main() {
                 room_commands::room_create(),
                 room_commands::room_key_create(),
                 room_commands::room_open(),
+                room_commands::room_close(),
             ],
             /// The global error handler for all error cases that may occur
             on_error: |error| Box::pin(on_error(error)),

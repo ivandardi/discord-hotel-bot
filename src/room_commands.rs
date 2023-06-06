@@ -119,3 +119,24 @@ pub async fn room_open(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
+
+/// Close a room's door, denying everyone from viewing and connecting.
+///
+/// Enter `/room_close` to close your room's door.
+#[poise::command(slash_command)]
+pub async fn room_close(ctx: Context<'_>) -> Result<(), Error> {
+    let role_everyone = dotenv!("DISCORD_ROLE_EVERYONE");
+    let role_everyone: u64 = role_everyone.parse().expect("Failed to parse role ID");
+
+    let permissions = PermissionOverwrite {
+        allow: Default::default(),
+        deny: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
+        kind: PermissionOverwriteType::Role(serenity::RoleId(role_everyone)),
+    };
+
+    ctx.channel_id().create_permission(&ctx, &permissions).await?;
+
+    ctx.say("Room has been closed!").await?;
+
+    Ok(())
+}
