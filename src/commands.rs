@@ -1,3 +1,7 @@
+use serenity::http::CacheHttp;
+use serenity::model::channel::ChannelType;
+use serenity::model::user::User;
+
 use crate::{Context, Error};
 
 /// Show this help menu
@@ -29,5 +33,27 @@ pub async fn ping(
     #[description = "Hm?"] _message: Option<String>,
 ) -> Result<(), Error> {
     ctx.say("Pong!").await?;
+    Ok(())
+}
+
+/// Create a new room for a guest.
+///
+/// Enter `/room create user` to create a new room for a specified user.
+#[poise::command(prefix_command)]
+pub async fn room_create(
+    ctx: Context<'_>,
+    #[description = "User that will get a new room"] user: User,
+) -> Result<(), Error> {
+    let guild = ctx.guild().expect("Can only be called in a server.");
+
+    let author_name = ctx.author().name.to_owned();
+    let room_name = format!("room-{}", author_name.to_lowercase());
+
+    guild.create_channel(ctx.http(), |create_channel| create_channel
+        .kind(ChannelType::Voice)
+        .name(room_name)
+        .nsfw(true)
+    ).await?;
+
     Ok(())
 }
