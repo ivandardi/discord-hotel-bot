@@ -2,8 +2,10 @@
 
 use dotenv_codegen::dotenv;
 use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::GuildId;
 
 mod commands;
+mod room_commands;
 
 // Types used by all command functions
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -17,12 +19,15 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 async fn main() {
     env_logger::init();
 
+    let guild_id = dotenv!("DISCORD_GUILD");
+    let guild_id: GuildId = guild_id.parse::<u64>().expect("Failed to parse guild ID").into();
+
     let framework = poise::Framework::builder()
         .token(dotenv!("DISCORD_TOKEN"))
         .setup(move |_ctx, _ready, _framework| {
             Box::pin(async move {
                 println!("Registering commands...");
-                poise::builtins::register_globally(_ctx, &_framework.options().commands).await?;
+                poise::builtins::register_in_guild(_ctx, &_framework.options().commands, guild_id).await?;
                 println!("Logged in as {}", _ready.user.name);
                 Ok(Data {})
             })
@@ -32,7 +37,9 @@ async fn main() {
                 commands::help(),
                 commands::ping(),
                 commands::register(),
-                commands::room_create(),
+                room_commands::room_create(),
+                room_commands::room_key_create(),
+                room_commands::room_open(),
             ],
             /// The global error handler for all error cases that may occur
             on_error: |error| Box::pin(on_error(error)),
