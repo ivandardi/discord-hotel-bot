@@ -42,9 +42,8 @@ pub async fn room_create(
     #[description = "User that will get a new room"] user: User,
 ) -> std::result::Result<(), Error> {
     let guild = ctx.guild().expect("Can only be called in a server.");
-
-    let author_name = ctx.author().name.to_owned();
-    let room_name = format!("room-{}", author_name.to_lowercase());
+    
+    let room_name = format!("room-{}", user.name.to_lowercase());
 
     guild.create_channel(ctx.http(), |create_channel| create_channel
         .kind(ChannelType::Voice)
