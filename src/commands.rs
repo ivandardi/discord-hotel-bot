@@ -1,8 +1,8 @@
+use dotenv_codegen::dotenv;
 use poise::serenity_prelude as serenity;
 use serenity::model::channel::PermissionOverwrite;
 use serenity::model::channel::PermissionOverwriteType;
 use serenity::model::Permissions;
-use dotenv_codegen::dotenv;
 
 use crate::{Context, Error};
 
@@ -17,12 +17,8 @@ pub async fn help(
     poise::builtins::help(
         ctx,
         command.as_deref(),
-        poise::builtins::HelpConfiguration {
-            extra_text_at_bottom: "This is an example bot made to showcase features of my custom Discord bot framework",
-            ..Default::default()
-        },
-    )
-        .await?;
+        poise::builtins::HelpConfiguration::default(),
+    ).await?;
     Ok(())
 }
 
