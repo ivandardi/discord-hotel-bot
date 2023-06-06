@@ -19,10 +19,10 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .token(dotenv!("DISCORD_TOKEN"))
-        .setup(move |ctx, _ready, framework| {
+        .setup(move |_ctx, _ready, _framework| {
             Box::pin(async move {
                 println!("Registering commands...");
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                poise::builtins::register_globally(_ctx, &_framework.options().commands).await?;
                 println!("Logged in as {}", _ready.user.name);
                 Ok(Data {})
             })
@@ -31,11 +31,9 @@ async fn main() {
             commands: vec![
                 commands::help(),
                 commands::ping(),
+                commands::register(),
+                commands::room_create(),
             ],
-            prefix_options: poise::PrefixFrameworkOptions {
-                prefix: Some("~".into()),
-                ..Default::default()
-            },
             /// The global error handler for all error cases that may occur
             on_error: |error| Box::pin(on_error(error)),
             /// This code is run before every command
