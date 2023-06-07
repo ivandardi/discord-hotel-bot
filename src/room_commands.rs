@@ -1,11 +1,13 @@
-use dotenv_codegen::dotenv;
 use anyhow::Context as _;
+use dotenv_codegen::dotenv;
 use poise::serenity_prelude as serenity;
-use shuttle_secrets::SecretStore;
-use shuttle_poise::ShuttlePoise;
+use poise::serenity_prelude::CacheHttp;
 use serenity::model::channel::PermissionOverwrite;
 use serenity::model::channel::PermissionOverwriteType;
 use serenity::model::Permissions;
+use shuttle_poise::ShuttlePoise;
+use shuttle_secrets::SecretStore;
+use tracing::log;
 
 use crate::types::{Context, Error};
 
@@ -37,16 +39,27 @@ pub async fn room_create(
         },
     ];
 
+    log::debug!("Creating channel {}", room_name);
+
     guild.create_channel(ctx, |create_channel| create_channel
-        .name(room_name)
+        .name(&room_name)
         .kind(serenity::ChannelType::Voice)
         .nsfw(true)
         .permissions(permissions)
         .category(category_rooms),
     ).await?;
 
+    log::debug!("Created channel {}", room_name);
+
     let discord_role_hotel_member = ctx.data().discord_role_hotel_member;
-    // TODO add this role to the member
+
+    log::debug!("Adding role to member {}", user.name);
+    ctx.http().add_member_role(
+        guild.id.into(),
+        user.id.into(),
+        discord_role_hotel_member,
+        Some("You now have a room! :D")
+    ).await?;
 
     ctx.say("Room has been created!").await?;
 
