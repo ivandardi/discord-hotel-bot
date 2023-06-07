@@ -21,7 +21,13 @@ pub async fn room_create(
 ) -> Result<(), Error> {
     let guild = ctx.guild().expect("Can only be called in a server.");
 
-    let room_name = format!("room-{}", user.name.to_lowercase());
+    let sanitized_username = {
+        let mut username = user.name.to_ascii_lowercase();
+        username.retain(|character| !character.is_ascii_whitespace());
+        username
+    };
+
+    let room_name = format!("room-{}", sanitized_username);
 
     let role_everyone = ctx.data().discord_role_everyone;
     let category_rooms = ctx.data().discord_category_rooms;
@@ -41,15 +47,21 @@ pub async fn room_create(
 
     log::debug!("Creating channel {}", room_name);
 
-    guild.create_channel(ctx, |create_channel| create_channel
+    match guild.create_channel(ctx, |create_channel| create_channel
         .name(&room_name)
         .kind(serenity::ChannelType::Voice)
         .nsfw(true)
         .permissions(permissions)
         .category(category_rooms),
-    ).await?;
-
-    log::debug!("Created channel {}", room_name);
+    ).await {
+        Ok(_) => {
+            log::debug!("Created channel {}", room_name);
+        }
+        Err(e) => {
+            log::debug!("Failed to create channel: {}", e);
+            return Err(e.into());
+        }
+    }
 
     let discord_role_hotel_member = ctx.data().discord_role_hotel_member;
 
