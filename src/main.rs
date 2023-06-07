@@ -6,6 +6,7 @@ use poise::serenity_prelude as serenity;
 use anyhow::Context as _;
 use shuttle_poise::ShuttlePoise;
 use shuttle_secrets::SecretStore;
+use tracing::log;
 use types::{Data, Error};
 
 mod commands;
@@ -20,9 +21,9 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
         .token(secret_store.get("DISCORD_TOKEN").unwrap())
         .setup(move |_ctx, _ready, _framework| {
             Box::pin(async move {
-                println!("Registering commands...");
+                log::debug!("Registering commands...");
                 poise::builtins::register_in_guild(_ctx, &_framework.options().commands, serenity::GuildId(data.discord_guild)).await?;
-                println!("Logged in as {}", _ready.user.name);
+                log::info!("Logged in as {}", _ready.user.name);
                 Ok(data)
             })
         })
@@ -41,13 +42,13 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
             /// This code is run before every command
             pre_command: |ctx| {
                 Box::pin(async move {
-                    println!("Executing command {}...", ctx.command().qualified_name);
+                    log::debug!("Executing command {}...", ctx.command().qualified_name);
                 })
             },
             /// This code is run after a command if it was successful (returned Ok)
             post_command: |ctx| {
                 Box::pin(async move {
-                    println!("Executed command {}!", ctx.command().qualified_name);
+                    log::debug!("Executed command {}!", ctx.command().qualified_name);
                 })
             },
             /// Every command invocation must pass this check to continue execution
@@ -61,7 +62,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
             skip_checks_for_owners: false,
             event_handler: |_ctx, event, _framework, _data| {
                 Box::pin(async move {
-                    println!("Got an event in event handler: {:?}", event.name());
+                    log::debug!("Got an event in event handler: {:?}", event.name());
                     Ok(())
                 })
             },
@@ -83,11 +84,11 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
             panic!("Failed to start bot: {:?}", error);
         }
         poise::FrameworkError::Command { error, ctx } => {
-            println!("Error in command `{}`: {:?}", ctx.command().name, error, );
+            log::error!("Error in command `{}`: {:?}", ctx.command().name, error, );
         }
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
-                println!("Error while handling error: {}", e)
+                log::error!("Error while handling error: {}", e)
             }
         }
     }
