@@ -132,6 +132,8 @@ pub async fn room_close(ctx: Context<'_>) -> Result<(), Error> {
         kind: PermissionOverwriteType::Role(serenity::RoleId(role_everyone)),
     };
 
+    ctx.channel_id().delete_permission(&ctx, PermissionOverwriteType::Role(serenity::RoleId(role_everyone))).await?;
+
     ctx.channel_id().create_permission(&ctx, &permissions).await?;
 
     ctx.say("Room has been closed!").await?;
