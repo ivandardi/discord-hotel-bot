@@ -107,30 +107,6 @@ pub async fn room_key_create(
 	Ok(())
 }
 
-/// Create a new key for an existing room.
-///
-/// Enter `/room_key_create user` to allow the specified user to read and send messages in your room.
-#[poise::command(slash_command)]
-pub async fn room_name_update(
-	ctx: Context<'_>,
-	#[description = "User that will get a new room"] user: serenity::User,
-) -> Result<()> {
-	let channel = ctx.channel_id();
-
-	let permissions = PermissionOverwrite {
-		allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
-		deny: Default::default(),
-		kind: PermissionOverwriteType::Member(user.id),
-	};
-
-	channel.create_permission(ctx, &permissions).await?;
-
-	ctx.say("Room access for provided user has been granted!")
-		.await?;
-
-	Ok(())
-}
-
 /// Open a room's door, allowing everyone to view and connect.
 ///
 /// Enter `/room_open` to open your room's door.
