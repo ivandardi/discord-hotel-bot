@@ -28,7 +28,7 @@ pub async fn room_create(
 
 	let sanitized_username = {
 		let mut username = user.name.to_ascii_lowercase();
-		username.retain(|character| !character.is_ascii_whitespace());
+		username.retain(|character| character.is_ascii_alphanumeric());
 		username
 	};
 

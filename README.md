@@ -26,3 +26,14 @@ Bot for the server version of an offtopic hangout area for the Rust Programming 
 This contains the bot's necessary permissions.
 
 https://discord.com/oauth2/authorize?client_id=<bot_id>&scope=bot&permissions=532844768464
+
+## How To Run
+
+Running the bot locally requires shuttle-rs. Make sure it is installed.
+
+Additionally, running the bot locally requires a `Secrets.dev.toml` file. A template for it
+is provided in the repository.
+
+```commandline
+cargo shuttle run
+```
