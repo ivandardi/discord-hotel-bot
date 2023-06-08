@@ -22,10 +22,6 @@ pub async fn room_create(
 	ctx: Context<'_>,
 	#[description = "User that will get a new room"] user: serenity::User,
 ) -> Result<()> {
-	let guild = ctx
-		.guild()
-		.ok_or(anyhow!("Can only be called in a server."))?;
-
 	let sanitized_username = {
 		let mut username = user.name.to_ascii_lowercase();
 		username.retain(|character| character.is_ascii_alphanumeric());
@@ -52,8 +48,10 @@ pub async fn room_create(
 
 	log::debug!("Creating channel {}", room_name);
 
-	match guild
-		.create_channel(ctx, |create_channel| {
+	match ctx
+		.guild()
+		.ok_or(anyhow!("Can only be called in a server."))?
+		.create_channel(&ctx, |create_channel| {
 			create_channel
 				.name(&room_name)
 				.kind(serenity::ChannelType::Voice)
@@ -77,7 +75,7 @@ pub async fn room_create(
 	log::debug!("Adding role to member {}", user.name);
 	ctx.http()
 		.add_member_role(
-			guild.id.into(),
+			ctx.guild().unwrap().id.into(),
 			user.id.into(),
 			discord_role_hotel_member,
 			Some("You now have a room! :D"),
