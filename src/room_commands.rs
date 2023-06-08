@@ -1,15 +1,11 @@
 use anyhow::anyhow;
 use anyhow::bail;
-use anyhow::Context as _;
 use anyhow::Result;
-use dotenv_codegen::dotenv;
 use poise::{serenity_prelude as serenity, serenity_prelude::CacheHttp};
 use serenity::model::{
 	channel::{PermissionOverwrite, PermissionOverwriteType},
 	Permissions,
 };
-use shuttle_poise::ShuttlePoise;
-use shuttle_secrets::SecretStore;
 use tracing::log;
 
 use crate::types::Context;
