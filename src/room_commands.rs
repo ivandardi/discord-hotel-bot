@@ -71,7 +71,9 @@ pub async fn room_create(
 	log::debug!("Adding role to member {}", user.name);
 	ctx.http()
 		.add_member_role(
-			ctx.guild().unwrap().id.into(),
+			ctx.guild_id()
+				.ok_or(anyhow!("Can only be called in a server."))?
+				.0,
 			user.id.into(),
 			discord_role_hotel_member,
 			Some("You now have a room! :D"),
