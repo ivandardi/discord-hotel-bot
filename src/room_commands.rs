@@ -1,20 +1,19 @@
 use anyhow::anyhow;
 use anyhow::bail;
-use anyhow::Context as _;
 use anyhow::Result;
-use dotenv_codegen::dotenv;
 use poise::{serenity_prelude as serenity, serenity_prelude::CacheHttp};
 use serenity::model::{
 	channel::{PermissionOverwrite, PermissionOverwriteType},
 	Permissions,
 };
-use shuttle_poise::ShuttlePoise;
-use shuttle_secrets::SecretStore;
 use tracing::log;
 
 use crate::types::Context;
 
-#[poise::command(slash_command, subcommands("create", "key_create", "open", "close"))]
+#[poise::command(
+	slash_command,
+	subcommands("create", "key_create", "key_revoke", "name_update", "open", "close")
+)]
 pub async fn room_root(_ctx: Context<'_>) -> Result<()> {
 	Ok(())
 }
@@ -81,11 +80,9 @@ pub async fn create(
 	log::debug!("Adding role to member {}", user.name);
 	ctx.http()
 		.add_member_role(
-			ctx.partial_guild()
-				.await
+			ctx.guild_id()
 				.ok_or(anyhow!("Can only be called in a server."))?
-				.id
-				.into(),
+				.0,
 			user.id.into(),
 			discord_role_hotel_member,
 			Some("You now have a room! :D"),

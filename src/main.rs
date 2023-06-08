@@ -1,6 +1,5 @@
 #![warn(clippy::str_to_string)]
 
-use dotenv_codegen::dotenv;
 use poise::serenity_prelude as serenity;
 
 use anyhow::Error;

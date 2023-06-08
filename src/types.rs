@@ -1,4 +1,3 @@
-use dotenv_codegen::dotenv;
 use poise::serenity_prelude as serenity;
 
 use anyhow::{Context as _, Error};
