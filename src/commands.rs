@@ -30,8 +30,25 @@ pub async fn ping(ctx: Context<'_>, #[description = "Hm?"] _message: Option<Stri
 /// Register bot commands.
 ///
 /// Enter `/register` to choose how to register the bot commands.
-#[poise::command(slash_command)]
+#[poise::command(slash_command, prefix_command)]
 pub async fn register(ctx: Context<'_>) -> Result<()> {
 	poise::builtins::register_application_commands_buttons(ctx).await?;
 	Ok(())
+}
+
+/// Shuts down the bot.
+///
+/// Enter `/shutdown` to shutdown the bot.
+/// Enter `/shutdown unregister` to also unregister commands.
+#[poise::command(slash_command)]
+pub async fn shutdown(ctx: Context<'_>, #[flag] unregister: bool) -> Result<()> {
+	if unregister {
+		ctx.say(":gear: Unregistering guild commands...").await?;
+		ctx.guild_id()
+			.unwrap()
+			.set_application_commands(ctx, |b| b)
+			.await?;
+	}
+	// TODO: Add logout call so that the bot goes offline
+	std::process::exit(0);
 }

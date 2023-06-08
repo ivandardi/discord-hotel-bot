@@ -14,7 +14,7 @@ use crate::types::Context;
 	slash_command,
 	subcommands("create", "key_create", "key_revoke", "name_update", "open", "close")
 )]
-pub async fn room_root(_ctx: Context<'_>) -> Result<()> {
+pub async fn room(_ctx: Context<'_>) -> Result<()> {
 	Ok(())
 }
 
@@ -147,8 +147,8 @@ pub async fn key_revoke(
 /// Enter `/room name_update user`
 #[poise::command(slash_command)]
 pub async fn name_update(
-	ctx: Context<'_>,
-	#[description = "User that will get a new room"] user: serenity::User,
+	_ctx: Context<'_>,
+	#[description = "User that will get a new room"] _user: serenity::User,
 ) -> Result<()> {
 	// let channel = ctx.channel_id();
 

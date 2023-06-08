@@ -1,6 +1,6 @@
 #![warn(clippy::str_to_string)]
 
-use poise::serenity_prelude as serenity;
+use poise::{serenity_prelude as serenity, PrefixFrameworkOptions};
 
 use anyhow::Error;
 use shuttle_poise::ShuttlePoise;
@@ -32,11 +32,16 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
 			})
 		})
 		.options(poise::FrameworkOptions {
+			prefix_options: PrefixFrameworkOptions {
+				mention_as_prefix: true,
+				..Default::default()
+			},
 			commands: vec![
 				commands::help(),
 				commands::ping(),
 				commands::register(),
-				room_commands::room_root(),
+				commands::shutdown(),
+				room_commands::room(),
 			],
 			/// The global error handler for all error cases that may occur
 			on_error: |error| Box::pin(on_error(error)),

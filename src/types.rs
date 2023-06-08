@@ -1,7 +1,4 @@
-use poise::serenity_prelude as serenity;
-
 use anyhow::{Context as _, Error};
-use shuttle_poise::ShuttlePoise;
 use shuttle_secrets::SecretStore;
 
 // Custom user data passed to all command functions
