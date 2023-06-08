@@ -3,11 +3,11 @@
 use dotenv_codegen::dotenv;
 use poise::serenity_prelude as serenity;
 
-use anyhow::Context as _;
+use anyhow::Error;
 use shuttle_poise::ShuttlePoise;
 use shuttle_secrets::SecretStore;
 use tracing::log;
-use types::{Data, Error};
+use types::Data;
 
 mod commands;
 mod room_commands;

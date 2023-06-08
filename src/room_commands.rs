@@ -1,15 +1,18 @@
+use anyhow::anyhow;
+use anyhow::bail;
 use anyhow::Context as _;
+use anyhow::Result;
 use dotenv_codegen::dotenv;
-use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::CacheHttp;
-use serenity::model::channel::PermissionOverwrite;
-use serenity::model::channel::PermissionOverwriteType;
-use serenity::model::Permissions;
+use poise::{serenity_prelude as serenity, serenity_prelude::CacheHttp};
+use serenity::model::{
+	channel::{PermissionOverwrite, PermissionOverwriteType},
+	Permissions,
+};
 use shuttle_poise::ShuttlePoise;
 use shuttle_secrets::SecretStore;
 use tracing::log;
 
-use crate::types::{Context, Error};
+use crate::types::Context;
 
 /// Create a new room for a guest.
 ///
@@ -18,8 +21,10 @@ use crate::types::{Context, Error};
 pub async fn room_create(
 	ctx: Context<'_>,
 	#[description = "User that will get a new room"] user: serenity::User,
-) -> Result<(), Error> {
-	let guild = ctx.guild().expect("Can only be called in a server.");
+) -> Result<()> {
+	let guild = ctx
+		.guild()
+		.ok_or(anyhow!("Can only be called in a server."))?;
 
 	let sanitized_username = {
 		let mut username = user.name.to_ascii_lowercase();
@@ -63,7 +68,7 @@ pub async fn room_create(
 		}
 		Err(e) => {
 			log::debug!("Failed to create channel: {}", e);
-			return Err(e.into());
+			bail!(e)
 		}
 	}
 
@@ -91,7 +96,7 @@ pub async fn room_create(
 pub async fn room_key_create(
 	ctx: Context<'_>,
 	#[description = "User that will get a new room"] user: serenity::User,
-) -> Result<(), Error> {
+) -> Result<()> {
 	let channel = ctx.channel_id();
 
 	let permissions = PermissionOverwrite {
@@ -115,7 +120,7 @@ pub async fn room_key_create(
 pub async fn room_name_update(
 	ctx: Context<'_>,
 	#[description = "User that will get a new room"] user: serenity::User,
-) -> Result<(), Error> {
+) -> Result<()> {
 	let channel = ctx.channel_id();
 
 	let permissions = PermissionOverwrite {
@@ -136,7 +141,7 @@ pub async fn room_name_update(
 ///
 /// Enter `/room_open` to open your room's door.
 #[poise::command(slash_command)]
-pub async fn room_open(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn room_open(ctx: Context<'_>) -> Result<()> {
 	let role_everyone = ctx.data().discord_role_everyone;
 
 	let permissions = PermissionOverwrite {
@@ -158,7 +163,7 @@ pub async fn room_open(ctx: Context<'_>) -> Result<(), Error> {
 ///
 /// Enter `/room_close` to close your room's door.
 #[poise::command(slash_command)]
-pub async fn room_close(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn room_close(ctx: Context<'_>) -> Result<()> {
 	let role_everyone = ctx.data().discord_role_everyone;
 
 	let permissions = PermissionOverwrite {
