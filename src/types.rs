@@ -35,13 +35,15 @@ impl Data {
 				.parse()
 				.context("Failed to parse 'DISCORD_CATEGORY_ROOMS' as ChannelId")
 				.expect("Failed to parse 'DISCORD_CATEGORY_ROOMS' as ChannelId"),
+			// GuildId doesn't implement FromStr, so I can't parse directly to it
 			discord_guild: secret_store
 				.get("DISCORD_GUILD")
 				.context("Failed to get 'DISCORD_GUILD' from the secret store")
 				.expect("Failed to get 'DISCORD_GUILD' from the secret store")
-				.parse()
-				.context("Failed to parse 'DISCORD_GUILD' as GuildId")
-				.expect("Failed to parse 'DISCORD_GUILD' as GuildId"),
+				.parse::<u64>()
+				.context("Failed to parse 'DISCORD_GUILD' as u64")
+				.expect("Failed to parse 'DISCORD_GUILD' as u64")
+				.into(),
 			discord_channel_alerts: secret_store
 				.get("DISCORD_CHANNEL_ALERTS")
 				.context("Failed to get 'DISCORD_CHANNEL_ALERTS' from the secret store")
