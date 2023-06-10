@@ -14,14 +14,15 @@ jobs:
 
       - name: Create Secrets.toml file
         run: |
-          echo "# From secret store"
+          echo "# From secret store" >> Secrets.toml
           echo "SHUTTLE_DEPLOY_KEY=\"${{ secrets.SHUTTLE_DEPLOY_KEY }}\"" >> Secrets.toml
           echo "DISCORD_TOKEN=\"${{ secrets.DISCORD_TOKEN }}\"" >> Secrets.toml
-          echo "# From env var store"
+          echo "# From env var store" >> Secrets.toml
           echo "DISCORD_CATEGORY_ROOMS=\"${{ env.DISCORD_CATEGORY_ROOMS }}\"" >> Secrets.toml
           echo "DISCORD_GUILD=\"${{ env.DISCORD_GUILD }}\"" >> Secrets.toml
           echo "DISCORD_ROLE_EVERYONE=\"${{ env.DISCORD_ROLE_EVERYONE }}\"" >> Secrets.toml
           echo "DISCORD_ROLE_HOTEL_MEMBER=\"${{ env.DISCORD_ROLE_HOTEL_MEMBER }}\"" >> Secrets.toml
+          echo "DISCORD_CHANNEL_ALERTS=\"${{ env.DISCORD_CHANNEL_ALERTS }}\"" >> Secrets.toml
 
       - uses: shuttle-hq/deploy-action@main
         with:
