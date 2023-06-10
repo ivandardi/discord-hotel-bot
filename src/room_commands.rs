@@ -46,7 +46,7 @@ pub async fn create(
 		PermissionOverwrite {
 			allow: Default::default(),
 			deny: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
-			kind: PermissionOverwriteType::Role(serenity::RoleId(role_everyone)),
+			kind: PermissionOverwriteType::Role(role_everyone),
 		},
 	];
 
@@ -84,7 +84,7 @@ pub async fn create(
 				.ok_or(anyhow!("Can only be called in a server."))?
 				.0,
 			user.id.into(),
-			discord_role_hotel_member,
+			discord_role_hotel_member.into(),
 			Some("You now have a room! :D"),
 		)
 		.await?;
@@ -176,7 +176,7 @@ pub async fn open(ctx: Context<'_>) -> Result<()> {
 	let permissions = PermissionOverwrite {
 		allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
 		deny: Default::default(),
-		kind: PermissionOverwriteType::Role(serenity::RoleId(role_everyone)),
+		kind: PermissionOverwriteType::Role(role_everyone),
 	};
 
 	ctx.channel_id()
@@ -198,14 +198,11 @@ pub async fn close(ctx: Context<'_>) -> Result<()> {
 	let permissions = PermissionOverwrite {
 		allow: Default::default(),
 		deny: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
-		kind: PermissionOverwriteType::Role(serenity::RoleId(role_everyone)),
+		kind: PermissionOverwriteType::Role(role_everyone),
 	};
 
 	ctx.channel_id()
-		.delete_permission(
-			&ctx,
-			PermissionOverwriteType::Role(serenity::RoleId(role_everyone)),
-		)
+		.delete_permission(&ctx, PermissionOverwriteType::Role(role_everyone))
 		.await?;
 
 	ctx.channel_id()

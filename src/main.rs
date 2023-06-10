@@ -9,6 +9,7 @@ use tracing::log;
 use types::Data;
 
 mod commands;
+mod moderation_commands;
 mod room_commands;
 mod types;
 
@@ -24,7 +25,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
 				poise::builtins::register_in_guild(
 					_ctx,
 					&_framework.options().commands,
-					serenity::GuildId(data.discord_guild),
+					data.discord_guild,
 				)
 				.await?;
 				log::info!("Logged in as {}", _ready.user.name);
