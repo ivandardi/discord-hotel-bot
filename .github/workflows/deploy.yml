@@ -32,3 +32,6 @@ jobs:
         uses: "shuttle-hq/deploy-action@main"
         with:
           deploy-key: ${{ secrets.SHUTTLE_DEPLOY_KEY }}
+
+      - name: "Set up cargo cache again"
+        uses: Swatinem/rust-cache@v2
