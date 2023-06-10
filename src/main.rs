@@ -43,6 +43,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
 				commands::register(),
 				commands::shutdown(),
 				room_commands::room(),
+				moderation_commands::alert(),
 			],
 			/// The global error handler for all error cases that may occur
 			on_error: |error| Box::pin(on_error(error)),

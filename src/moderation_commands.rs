@@ -1,26 +1,35 @@
-use anyhow::anyhow;
-use anyhow::bail;
-use anyhow::Result;
-use poise::{serenity_prelude as serenity, serenity_prelude::CacheHttp};
-use serenity::model::{
-	channel::{PermissionOverwrite, PermissionOverwriteType},
-	Permissions,
-};
-use tracing::log;
+use anyhow::{anyhow, Result};
+use poise::serenity_prelude::Mentionable;
+use std::time::SystemTime;
 
 use crate::types::Context;
 
 /// Sends an alert to the responsible authorities.
 ///
-/// This is both a group and a command.
-///
 /// The command `/alert` will create a generic alert to the authorities indicating where the command
 /// was run.
 ///
 /// You can add more context to the command with its parameters.
-#[poise::command(
-	slash_command,
-)]
+#[poise::command(slash_command)]
 pub async fn alert(ctx: Context<'_>) -> Result<()> {
-	ctx.data().
+	// let cache = ctx.cache().ok_or(anyhow!("Couldn't retrieve the cache."))?;
+
+	let channel_name = ctx.channel_id().mention();
+
+	let time = SystemTime::now()
+		.duration_since(SystemTime::UNIX_EPOCH)?
+		.as_secs();
+
+	let _sent_message = ctx
+		.data()
+		.discord_channel_alerts
+		.send_message(&ctx, |create_message| {
+			create_message.content(format!(
+				"Alert was sent from channel {channel_name} <t:{time}:R>.\
+				Please react to this message when you read it."
+			))
+		})
+		.await?;
+
+	Ok(())
 }
