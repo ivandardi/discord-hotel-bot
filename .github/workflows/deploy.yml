@@ -7,15 +7,16 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: "ubuntu-latest"
+    environment: "Prod"
     steps:
-      - name: Checkout repository
+      - name: "Checkout repository"
         uses: actions/checkout@v3
 
-      - name: Set up cargo cache
+      - name: "Set up cargo cache"
         uses: Swatinem/rust-cache@v2
 
-      - name: Create Secrets.toml file
+      - name: "Create Secrets.toml file"
         run: |
           echo "# From secret store" >> Secrets.toml
           echo "SHUTTLE_DEPLOY_KEY=\"${{ secrets.SHUTTLE_DEPLOY_KEY }}\"" >> Secrets.toml
@@ -27,6 +28,7 @@ jobs:
           echo "DISCORD_ROLE_HOTEL_MEMBER=\"${{ env.DISCORD_ROLE_HOTEL_MEMBER }}\"" >> Secrets.toml
           echo "DISCORD_CHANNEL_ALERTS=\"${{ env.DISCORD_CHANNEL_ALERTS }}\"" >> Secrets.toml
 
-      - uses: shuttle-hq/deploy-action@main
+      - name: "Deploy on Shuttle.rs"
+        uses: "shuttle-hq/deploy-action@main"
         with:
           deploy-key: ${{ secrets.SHUTTLE_DEPLOY_KEY }}
