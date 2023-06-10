@@ -1,0 +1,28 @@
+name: Shuttle deploy
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Create Secrets.toml file
+        run: |
+          echo "# From secret store"
+          echo "SHUTTLE_DEPLOY_KEY=\"${{ secrets.SHUTTLE_DEPLOY_KEY }}\"" >> Secrets.toml
+          echo "DISCORD_TOKEN=\"${{ secrets.DISCORD_TOKEN }}\"" >> Secrets.toml
+          echo "# From env var store"
+          echo "DISCORD_CATEGORY_ROOMS=\"${{ env.DISCORD_CATEGORY_ROOMS }}\"" >> Secrets.toml
+          echo "DISCORD_GUILD=\"${{ env.DISCORD_GUILD }}\"" >> Secrets.toml
+          echo "DISCORD_ROLE_EVERYONE=\"${{ env.DISCORD_ROLE_EVERYONE }}\"" >> Secrets.toml
+          echo "DISCORD_ROLE_HOTEL_MEMBER=\"${{ env.DISCORD_ROLE_HOTEL_MEMBER }}\"" >> Secrets.toml
+
+      - uses: shuttle-hq/deploy-action@main
+        with:
+          shuttle_api_key: ${{ secrets.SHUTTLE_DEPLOY_KEY }}
