@@ -18,24 +18,26 @@ impl Data {
 				.get("DISCORD_ROLE_EVERYONE")
 				.context("Failed to get 'DISCORD_ROLE_EVERYONE' from the secret store")
 				.expect("Failed to get 'DISCORD_ROLE_EVERYONE' from the secret store")
-				.parse()
-				.context("Failed to parse 'DISCORD_ROLE_EVERYONE' as RoleId")
-				.expect("Failed to parse 'DISCORD_ROLE_EVERYONE' as RoleId"),
+				.parse::<u64>()
+				.context("Failed to parse 'DISCORD_ROLE_EVERYONE' as u64")
+				.expect("Failed to parse 'DISCORD_ROLE_EVERYONE' as u64")
+				.into(),
 			discord_role_hotel_member: secret_store
 				.get("DISCORD_ROLE_HOTEL_MEMBER")
 				.context("Failed to get 'DISCORD_ROLE_HOTEL_MEMBER' from the secret store")
 				.expect("Failed to get 'DISCORD_ROLE_HOTEL_MEMBER' from the secret store")
-				.parse()
-				.context("Failed to parse 'DISCORD_ROLE_HOTEL_MEMBER' as RoleId")
-				.expect("Failed to parse 'DISCORD_ROLE_HOTEL_MEMBER' as RoleId"),
+				.parse::<u64>()
+				.context("Failed to parse 'DISCORD_ROLE_HOTEL_MEMBER' as u64")
+				.expect("Failed to parse 'DISCORD_ROLE_HOTEL_MEMBER' as u64")
+				.into(),
 			discord_category_rooms: secret_store
 				.get("DISCORD_CATEGORY_ROOMS")
 				.context("Failed to get 'DISCORD_CATEGORY_ROOMS' from the secret store")
 				.expect("Failed to get 'DISCORD_CATEGORY_ROOMS' from the secret store")
-				.parse()
-				.context("Failed to parse 'DISCORD_CATEGORY_ROOMS' as ChannelId")
-				.expect("Failed to parse 'DISCORD_CATEGORY_ROOMS' as ChannelId"),
-			// GuildId doesn't implement FromStr, so I can't parse directly to it
+				.parse::<u64>()
+				.context("Failed to parse 'DISCORD_CATEGORY_ROOMS' as u64")
+				.expect("Failed to parse 'DISCORD_CATEGORY_ROOMS' as u64")
+				.into(),
 			discord_guild: secret_store
 				.get("DISCORD_GUILD")
 				.context("Failed to get 'DISCORD_GUILD' from the secret store")
@@ -48,9 +50,10 @@ impl Data {
 				.get("DISCORD_CHANNEL_ALERTS")
 				.context("Failed to get 'DISCORD_CHANNEL_ALERTS' from the secret store")
 				.expect("Failed to get 'DISCORD_CHANNEL_ALERTS' from the secret store")
-				.parse()
-				.context("Failed to parse 'DISCORD_CHANNEL_ALERTS' as ChannelId")
-				.expect("Failed to parse 'DISCORD_CHANNEL_ALERTS' as ChannelId"),
+				.parse::<u64>()
+				.context("Failed to parse 'DISCORD_CHANNEL_ALERTS' as u64")
+				.expect("Failed to parse 'DISCORD_CHANNEL_ALERTS' as u64")
+				.into(),
 		}
 	}
 }
