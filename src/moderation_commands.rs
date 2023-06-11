@@ -1,6 +1,6 @@
-use anyhow::{anyhow, Result};
+use crate::helpers::get_unix_timestamp_now;
+use anyhow::Result;
 use poise::serenity_prelude::Mentionable;
-use std::time::SystemTime;
 
 use crate::types::Context;
 
@@ -16,9 +16,7 @@ pub async fn alert(ctx: Context<'_>) -> Result<()> {
 
 	let channel_name = ctx.channel_id().mention();
 
-	let time = SystemTime::now()
-		.duration_since(SystemTime::UNIX_EPOCH)?
-		.as_secs();
+	let time = get_unix_timestamp_now()?;
 
 	let _sent_message = ctx
 		.data()

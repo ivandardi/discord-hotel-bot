@@ -9,9 +9,11 @@ use tracing::log;
 use types::Data;
 
 mod commands;
+mod helpers;
 mod moderation_commands;
 mod room_commands;
 mod types;
+mod uptime;
 
 #[shuttle_runtime::main]
 async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> ShuttlePoise<Data, Error> {
@@ -44,6 +46,7 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
 				commands::shutdown(),
 				room_commands::room(),
 				moderation_commands::alert(),
+				uptime::uptime(),
 			],
 			/// The global error handler for all error cases that may occur
 			on_error: |error| Box::pin(on_error(error)),

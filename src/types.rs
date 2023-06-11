@@ -1,9 +1,11 @@
+use crate::helpers::get_unix_timestamp_now;
 use anyhow::{Context as _, Error};
 use poise::serenity_prelude::{ChannelId, GuildId, RoleId};
 use shuttle_secrets::SecretStore;
 
 // Custom user data passed to all command functions
 pub struct Data {
+	pub bot_startup_timestamp: u64,
 	pub discord_role_everyone: RoleId,
 	pub discord_role_hotel_member: RoleId,
 	pub discord_category_rooms: ChannelId,
@@ -14,6 +16,9 @@ pub struct Data {
 impl Data {
 	pub fn new(secret_store: &SecretStore) -> Self {
 		Self {
+			bot_startup_timestamp: get_unix_timestamp_now()
+				.context("Failed to get current time.")
+				.expect("Failed to get current time."),
 			discord_role_everyone: secret_store
 				.get("DISCORD_ROLE_EVERYONE")
 				.context("Failed to get 'DISCORD_ROLE_EVERYONE' from the secret store")
