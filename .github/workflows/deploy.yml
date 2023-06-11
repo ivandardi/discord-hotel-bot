@@ -28,6 +28,9 @@ jobs:
           echo "DISCORD_ROLE_HOTEL_MEMBER=\"${{ env.DISCORD_ROLE_HOTEL_MEMBER }}\"" >> Secrets.toml
           echo "DISCORD_CHANNEL_ALERTS=\"${{ env.DISCORD_CHANNEL_ALERTS }}\"" >> Secrets.toml
 
+      - name: "Print Secrets.toml file"
+        run: tail -n +4 Secrets.toml
+
       - name: "Deploy on Shuttle.rs"
         uses: "shuttle-hq/deploy-action@main"
         with:
