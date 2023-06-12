@@ -5,24 +5,27 @@ use poise::{serenity_prelude as serenity, PrefixFrameworkOptions};
 use anyhow::Error;
 use shuttle_poise::ShuttlePoise;
 use shuttle_secrets::SecretStore;
+use sqlx::{Executor, PgPool};
 use tracing::log;
 use types::Data;
 
 mod commands;
 mod helpers;
-mod moderation_commands;
-mod room_commands;
 mod types;
-mod uptime;
 
 #[shuttle_runtime::main]
-async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> ShuttlePoise<Data, Error> {
-	let data = Data::new(&secret_store);
-
+async fn poise(
+	#[shuttle_secrets::Secrets] secret_store: SecretStore,
+	#[shuttle_shared_db::Postgres] database: PgPool,
+) -> ShuttlePoise<Data, Error> {
 	let framework = poise::Framework::builder()
 		.token(secret_store.get("DISCORD_TOKEN").unwrap())
 		.setup(move |_ctx, _ready, _framework| {
 			Box::pin(async move {
+				let data = Data::new(&secret_store, database);
+
+				log::info!("discord-hotel-bot logged in as {}", _ready.user.name);
+
 				log::debug!("Registering commands...");
 				poise::builtins::register_in_guild(
 					_ctx,
@@ -30,7 +33,18 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
 					data.discord_guild,
 				)
 				.await?;
-				log::info!("Logged in as {}", _ready.user.name);
+
+				log::debug!("Setting up database...");
+				data.database
+					.execute(
+						"CREATE TABLE IF NOT EXISTS user_room_ownership (
+						user_id BIGINT,
+						channel_id BIGINT,
+						PRIMARY KEY (user_id, channel_id)
+					);",
+					)
+					.await?;
+
 				Ok(data)
 			})
 		})
@@ -44,9 +58,9 @@ async fn poise(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> Shuttle
 				commands::ping(),
 				commands::register(),
 				commands::shutdown(),
-				room_commands::room(),
-				moderation_commands::alert(),
-				uptime::uptime(),
+				commands::room::room(),
+				commands::moderation::alert(),
+				commands::uptime::uptime(),
 			],
 			/// The global error handler for all error cases that may occur
 			on_error: |error| Box::pin(on_error(error)),

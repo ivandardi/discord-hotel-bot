@@ -2,6 +2,7 @@ use crate::helpers::get_unix_timestamp_now;
 use anyhow::{Context as _, Error};
 use poise::serenity_prelude::{ChannelId, GuildId, RoleId};
 use shuttle_secrets::SecretStore;
+use sqlx::PgPool;
 
 // Custom user data passed to all command functions
 pub struct Data {
@@ -11,10 +12,11 @@ pub struct Data {
 	pub discord_category_rooms: ChannelId,
 	pub discord_guild: GuildId,
 	pub discord_channel_alerts: ChannelId,
+	pub database: PgPool,
 }
 
 impl Data {
-	pub fn new(secret_store: &SecretStore) -> Self {
+	pub fn new(secret_store: &SecretStore, database: PgPool) -> Self {
 		Self {
 			bot_startup_timestamp: get_unix_timestamp_now()
 				.context("Failed to get current time.")
@@ -59,6 +61,7 @@ impl Data {
 				.context("Failed to parse 'DISCORD_CHANNEL_ALERTS' as u64")
 				.expect("Failed to parse 'DISCORD_CHANNEL_ALERTS' as u64")
 				.into(),
+			database,
 		}
 	}
 }

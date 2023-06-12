@@ -1,6 +1,10 @@
 use crate::types::Context;
 use anyhow::Result;
 
+pub mod moderation;
+pub mod room;
+pub mod uptime;
+
 /// Show this help menu
 #[poise::command(slash_command)]
 pub async fn help(

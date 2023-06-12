@@ -9,7 +9,11 @@ edition = "2021"
 shuttle-runtime = "0.18.0"
 shuttle-poise = "0.18.0"
 shuttle-secrets = "0.18.0"
+shuttle-shared-db = { version = "0.18.0", features = ["postgres"] }
 poise = "0.5.5"
-anyhow = "1.0.71"
-tokio = "1.28.2"
+anyhow = "1.0"
+tokio = "1.28"
 tracing = "0.1.37"
+serde = "1.0"
+serde_json = "1.0"
+sqlx = { version = "0.6.3", features = ["runtime-tokio-native-tls", "postgres", "macros"] }
