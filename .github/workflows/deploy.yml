@@ -25,6 +25,11 @@ jobs:
           echo "DISCORD_ROLE_HOTEL_MEMBER=\"${{ vars.DISCORD_ROLE_HOTEL_MEMBER }}\"" >> Secrets.toml
           echo "DISCORD_CHANNEL_ALERTS=\"${{ vars.DISCORD_CHANNEL_ALERTS }}\"" >> Secrets.toml
 
+      - name: "Debug prints"
+        run: |
+          ls -lA /home/runner/.cargo/bin
+          echo $PATH
+
       - name: "Deploy on Shuttle.rs"
         uses: "shuttle-hq/deploy-action@main"
         with:
