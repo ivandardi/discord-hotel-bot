@@ -1,14 +1,13 @@
 use anyhow::anyhow;
 use anyhow::bail;
 use anyhow::Result;
-use poise::serenity_prelude::{CreateChannel, GuildChannel, RoleId, User};
+use poise::serenity_prelude::{ChannelId, GuildChannel, RoleId, User};
 use poise::{serenity_prelude as serenity, serenity_prelude::CacheHttp};
 use serenity::model::{
 	channel::{PermissionOverwrite, PermissionOverwriteType},
 	Permissions,
 };
-use sqlx::postgres::PgQueryResult;
-use sqlx::{Error, Executor};
+use sqlx::Row;
 use std::mem;
 use tracing::log;
 
@@ -136,18 +135,39 @@ pub async fn key_create(
 	ctx: Context<'_>,
 	#[description = "User that will get a key"] user: User,
 ) -> Result<()> {
-	let permissions = PermissionOverwrite {
-		allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
-		deny: Default::default(),
-		kind: PermissionOverwriteType::Member(user.id),
-	};
+	let author_id_as_i64: i64 = unsafe { mem::transmute(ctx.author().id.0) };
 
-	ctx.channel_id()
-		.create_permission(ctx, &permissions)
-		.await?;
+	let query_result =
+		sqlx::query("SELECT channel_id FROM user_channel_ownership WHERE user_id = $1")
+			.bind(author_id_as_i64)
+			.fetch_optional(&ctx.data().database)
+			.await?;
 
-	ctx.say("Room access for provided user has been granted!")
-		.await?;
+	let channel_id = query_result.map(|row| {
+		let channel_id_as_u64: u64 = unsafe {
+			let row_id: i64 = row.get(0);
+			mem::transmute(row_id)
+		};
+
+		ChannelId(channel_id_as_u64)
+	});
+
+	if let Some(channel_id) = channel_id {
+		let permission_overwrite = PermissionOverwrite {
+			allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
+			deny: Default::default(),
+			kind: PermissionOverwriteType::Member(user.id),
+		};
+
+		channel_id
+			.create_permission(&ctx, &permission_overwrite)
+			.await?;
+
+		ctx.say("Room access for the provided user has been granted!")
+			.await?;
+	} else {
+		ctx.say("User does not have a room.").await?;
+	}
 
 	Ok(())
 }
