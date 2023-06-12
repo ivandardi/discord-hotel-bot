@@ -40,7 +40,7 @@ async fn poise(
 						"CREATE TABLE IF NOT EXISTS user_room_ownership (
 						user_id BIGINT,
 						channel_id BIGINT,
-						PRIMARY KEY (user_id, channel_id)
+						PRIMARY KEY (user_id)
 					);",
 					)
 					.await?;

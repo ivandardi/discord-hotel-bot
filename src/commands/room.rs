@@ -96,31 +96,31 @@ pub async fn create(
 	let user_id = user.id.0;
 	let channel_id = channel.id.0;
 
-	let results = sqlx::query(
-		"
-		INSERT INTO user_channel_ownership
-		(user_id, channel_id) VALUES ($1, $2)
-		",
-	)
-	.bind::<i64>(unsafe { mem::transmute(user_id) })
-	.bind::<i64>(unsafe { mem::transmute(channel_id) })
-	.execute(&ctx.data().database)
-	.await;
+	let query_results =
+		sqlx::query("INSERT INTO user_channel_ownership (user_id, channel_id) VALUES ($1, $2)")
+			.bind::<i64>(unsafe { mem::transmute(user_id) })
+			.bind::<i64>(unsafe { mem::transmute(channel_id) })
+			.execute(&ctx.data().database)
+			.await;
 
-	match results {
-		Ok(_) => {}
+	match query_results {
+		Ok(results) => {
+			let values_were_inserted = results.rows_affected() == 1;
+			if !values_were_inserted {
+				channel.delete(&ctx).await?;
+				bail!("Failed to execute query when creating room.");
+			}
+		}
 		Err(error) => {
 			channel.delete(&ctx).await?;
 			bail!(error)
 		}
 	}
 
-	match assign_role_to_member(&ctx, &ctx.data().discord_role_hotel_member, &user).await {
-		Ok(_) => {}
-		Err(error) => {
-			channel.delete(&ctx).await?;
-			bail!(error);
-		}
+	let role = &ctx.data().discord_role_hotel_member;
+	if let Err(error) = assign_role_to_member(&ctx, role, &user).await {
+		channel.delete(&ctx).await?;
+		bail!(error);
 	}
 
 	ctx.say("Room has been created!").await?;
