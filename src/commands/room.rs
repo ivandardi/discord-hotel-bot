@@ -1,7 +1,8 @@
 use anyhow::anyhow;
 use anyhow::bail;
 use anyhow::Result;
-use poise::serenity_prelude::{ChannelId, GuildChannel, RoleId, User};
+use poise::futures_util::future::ok;
+use poise::serenity_prelude::{ChannelId, GuildChannel, Mentionable, RoleId, User};
 use poise::{serenity_prelude as serenity, serenity_prelude::CacheHttp};
 use serenity::model::{
 	channel::{PermissionOverwrite, PermissionOverwriteType},
@@ -9,7 +10,7 @@ use serenity::model::{
 };
 use sqlx::Row;
 use std::mem;
-use tracing::log;
+use tracing::{log, warn};
 
 use crate::types::Context;
 
@@ -135,22 +136,7 @@ pub async fn key_create(
 	ctx: Context<'_>,
 	#[description = "User that will get a key"] user: User,
 ) -> Result<()> {
-	let author_id_as_i64: i64 = unsafe { mem::transmute(ctx.author().id.0) };
-
-	let query_result =
-		sqlx::query("SELECT channel_id FROM user_channel_ownership WHERE user_id = $1")
-			.bind(author_id_as_i64)
-			.fetch_optional(&ctx.data().database)
-			.await?;
-
-	let channel_id = query_result.map(|row| {
-		let channel_id_as_u64: u64 = unsafe {
-			let row_id: i64 = row.get(0);
-			mem::transmute(row_id)
-		};
-
-		ChannelId(channel_id_as_u64)
-	});
+	let channel_id = fetch_guest_room(&ctx).await?;
 
 	if let Some(channel_id) = channel_id {
 		let permission_overwrite = PermissionOverwrite {
@@ -264,4 +250,26 @@ pub async fn close(ctx: Context<'_>) -> Result<()> {
 	ctx.say("Room has been closed!").await?;
 
 	Ok(())
+}
+
+async fn fetch_guest_room(ctx: &Context<'_>) -> Result<Option<ChannelId>, anyhow::Error> {
+	let author_id_as_i64: i64 = unsafe { mem::transmute(ctx.author().id.0) };
+
+	sqlx::query("SELECT channel_id FROM user_channel_ownership WHERE user_id = $1")
+		.bind(author_id_as_i64)
+		.fetch_optional(&ctx.data().database)
+		.await
+		.map(|row_option| {
+			row_option.map(|row| {
+				let row_id: i64 = row.get(0);
+				ChannelId(unsafe { mem::transmute(row_id) })
+			})
+		})
+		.map_err(|e| {
+			anyhow!(
+				"Couldn't fetch room for user {}: {}",
+				ctx.author().mention(),
+				e
+			)
+		})
 }
