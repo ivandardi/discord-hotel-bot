@@ -13,9 +13,6 @@ jobs:
       - name: "Checkout repository"
         uses: actions/checkout@v3
 
-      - name: "Set up cargo cache"
-        uses: Swatinem/rust-cache@v2
-
       - name: "Create Secrets.toml file"
         run: |
           echo "# From secret store" >> Secrets.toml
