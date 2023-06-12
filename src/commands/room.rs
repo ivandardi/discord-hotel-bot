@@ -138,22 +138,18 @@ pub async fn key_create(
 ) -> Result<()> {
 	let channel_id = fetch_guest_room(&ctx).await?;
 
-	if let Some(channel_id) = channel_id {
-		let permission_overwrite = PermissionOverwrite {
-			allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
-			deny: Default::default(),
-			kind: PermissionOverwriteType::Member(user.id),
-		};
+	let permission_overwrite = PermissionOverwrite {
+		allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
+		deny: Default::default(),
+		kind: PermissionOverwriteType::Member(user.id),
+	};
 
-		channel_id
-			.create_permission(&ctx, &permission_overwrite)
-			.await?;
+	channel_id
+		.create_permission(&ctx, &permission_overwrite)
+		.await?;
 
-		ctx.say("Room access for the provided user has been granted!")
-			.await?;
-	} else {
-		ctx.say("User does not have a room.").await?;
-	}
+	ctx.say("Room access for the provided user has been granted!")
+		.await?;
 
 	Ok(())
 }
@@ -252,24 +248,23 @@ pub async fn close(ctx: Context<'_>) -> Result<()> {
 	Ok(())
 }
 
-async fn fetch_guest_room(ctx: &Context<'_>) -> Result<Option<ChannelId>, anyhow::Error> {
+async fn fetch_guest_room(ctx: &Context<'_>) -> Result<ChannelId, anyhow::Error> {
 	let author_id_as_i64: i64 = unsafe { mem::transmute(ctx.author().id.0) };
 
 	sqlx::query("SELECT channel_id FROM user_channel_ownership WHERE user_id = $1")
 		.bind(author_id_as_i64)
 		.fetch_optional(&ctx.data().database)
 		.await
-		.map(|row_option| {
-			row_option.map(|row| {
-				let row_id: i64 = row.get(0);
-				ChannelId(unsafe { mem::transmute(row_id) })
-			})
-		})
 		.map_err(|e| {
 			anyhow!(
 				"Couldn't fetch room for user {}: {}",
 				ctx.author().mention(),
 				e
 			)
+		})?
+		.ok_or_else(|| anyhow!("User {} does not have a room.", ctx.author().mention()))
+		.map(|row| {
+			let row_id: i64 = row.get(0);
+			ChannelId(unsafe { mem::transmute(row_id) })
 		})
 }
