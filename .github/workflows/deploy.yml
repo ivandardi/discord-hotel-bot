@@ -13,12 +13,16 @@ jobs:
       - name: "Checkout repository"
         uses: actions/checkout@v3
 
-      - name: "Set up cargo cache"
-        uses: Swatinem/rust-cache@v2
+      - name: "Set up cargo binstall"
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
       - name: "Install shuttle.rs CLI"
         run: |
-          cargo install cargo-shuttle
+          cargo binstall cargo-shuttle
+
+      - name: "Set up cargo cache"
+        uses: Swatinem/rust-cache@v2
 
       - name: "List cargo executables"
         run: |
