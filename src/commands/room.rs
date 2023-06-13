@@ -197,15 +197,15 @@ pub async fn name_reset(
 /// Enter `/room open` to open your room's door.
 #[poise::command(slash_command)]
 pub async fn open(ctx: Context<'_>) -> Result<()> {
+	let channel_id = fetch_guest_room(&ctx).await?;
+
 	let permissions = PermissionOverwrite {
 		allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
 		deny: Default::default(),
 		kind: PermissionOverwriteType::Role(ctx.data().discord_role_everyone),
 	};
 
-	ctx.channel_id()
-		.create_permission(&ctx, &permissions)
-		.await?;
+	channel_id.create_permission(&ctx, &permissions).await?;
 
 	ctx.say("Room has been opened!").await?;
 
@@ -217,21 +217,21 @@ pub async fn open(ctx: Context<'_>) -> Result<()> {
 /// Enter `/room close` to close your room's door.
 #[poise::command(slash_command)]
 pub async fn close(ctx: Context<'_>) -> Result<()> {
-	let role_everyone = ctx.data().discord_role_everyone;
+	let channel_id = fetch_guest_room(&ctx).await?;
 
 	let permissions = PermissionOverwrite {
 		allow: Default::default(),
 		deny: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
-		kind: PermissionOverwriteType::Role(role_everyone),
+		kind: PermissionOverwriteType::Role(ctx.data().discord_role_everyone),
 	};
 
-	ctx.channel_id()
-		.delete_permission(&ctx, PermissionOverwriteType::Role(role_everyone))
+	channel_id
+		.delete_permission(
+			&ctx,
+			PermissionOverwriteType::Role(ctx.data().discord_role_everyone),
+		)
 		.await?;
-
-	ctx.channel_id()
-		.create_permission(&ctx, &permissions)
-		.await?;
+	channel_id.create_permission(&ctx, &permissions).await?;
 
 	ctx.say("Room has been closed!").await?;
 
