@@ -1,7 +1,6 @@
 use anyhow::anyhow;
 use anyhow::bail;
 use anyhow::Result;
-use poise::futures_util::future::ok;
 use poise::serenity_prelude::{ChannelId, GuildChannel, Mentionable, RoleId, User};
 use poise::{serenity_prelude as serenity, serenity_prelude::CacheHttp};
 use serenity::model::{
@@ -10,13 +9,13 @@ use serenity::model::{
 };
 use sqlx::Row;
 use std::mem;
-use tracing::{log, warn};
+use tracing::log;
 
 use crate::types::Context;
 
 #[poise::command(
 	slash_command,
-	subcommands("create", "key_create", "key_revoke", "name_update", "open", "close")
+	subcommands("create", "key_create", "key_revoke", "name_reset", "open", "close")
 )]
 pub async fn room(_ctx: Context<'_>) -> Result<()> {
 	Ok(())
@@ -37,21 +36,6 @@ pub async fn create(
 	ctx: Context<'_>,
 	#[description = "User who will get a room."] user: User,
 ) -> Result<()> {
-	async fn assign_role_to_member(ctx: &Context<'_>, role: &RoleId, user: &User) -> Result<()> {
-		log::debug!("Adding role {} to member {}", role, user);
-		ctx.http()
-			.add_member_role(
-				ctx.guild_id()
-					.ok_or(anyhow!("Can only be called in a server."))?
-					.0,
-				user.id.into(),
-				(*role).into(),
-				Some("You now have a room! :D"),
-			)
-			.await?;
-		Ok(())
-	}
-
 	async fn create_voice_channel(ctx: &Context<'_>, user: &User) -> Result<GuildChannel> {
 		let permissions = vec![
 			PermissionOverwrite {
@@ -66,14 +50,7 @@ pub async fn create(
 			},
 		];
 
-		let room_name = {
-			let sanitized_username = {
-				let mut username = user.name.to_ascii_lowercase();
-				username.retain(|character| character.is_ascii_alphanumeric());
-				username
-			};
-			format!("room-{}", sanitized_username)
-		};
+		let room_name = generate_room_name(user);
 		log::debug!("Creating channel {}", room_name);
 
 		ctx.partial_guild()
@@ -123,14 +100,16 @@ pub async fn create(
 		bail!(error);
 	}
 
-	ctx.say("Room has been created!").await?;
+	ctx.say(format!("Room has been created! {}", channel.mention()))
+		.await?;
 
 	Ok(())
 }
 
 /// Create a new key for an existing room.
 ///
-/// Enter `/room key_create <user>` to allow the specified user to read and send messages in your room.
+/// Enter `/room key_create <user>` to allow the specified user to read and send messages in your
+/// room.
 #[poise::command(slash_command)]
 pub async fn key_create(
 	ctx: Context<'_>,
@@ -156,48 +135,59 @@ pub async fn key_create(
 
 /// Revoke a key for an existing room.
 ///
-/// Enter `/room key_revoke <user>` to disallow the specified user to read and send messages in your room.
+/// Enter `/room key_revoke <user>` to disallow the specified user to read and send messages in your
+/// room.
 #[poise::command(slash_command)]
 pub async fn key_revoke(
 	ctx: Context<'_>,
 	#[description = "User that will lose their key"] user: User,
 ) -> Result<()> {
-	let permissions = PermissionOverwrite {
+	let channel_id = fetch_guest_room(&ctx).await?;
+
+	let permission_overwrite = PermissionOverwrite {
 		allow: Default::default(),
 		deny: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
 		kind: PermissionOverwriteType::Member(user.id),
 	};
 
-	ctx.channel_id()
-		.create_permission(ctx, &permissions)
+	channel_id
+		.create_permission(&ctx, &permission_overwrite)
 		.await?;
 
-	ctx.say("Room access for provided user has been revoked!")
+	ctx.say("Room access for the provided user has been revoked!")
 		.await?;
 
 	Ok(())
 }
 
-/// TODO
+/// Resets the name of the room to the canonical one as defined by `generate_room_name()`.
 ///
-/// Enter `/room name_update <user>`
+/// Enter `/room name_reset <user>`
 #[poise::command(slash_command)]
-pub async fn name_update(
-	_ctx: Context<'_>,
-	#[description = "User that will get a new room"] _user: serenity::User,
+pub async fn name_reset(
+	ctx: Context<'_>,
+	#[description = "User whose room's name will be reset"] user: User,
 ) -> Result<()> {
-	// let channel = ctx.channel_id();
+	let expected_room_name = generate_room_name(&user);
 
-	// let permissions = PermissionOverwrite {
-	// 	allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
-	// 	deny: Default::default(),
-	// 	kind: PermissionOverwriteType::Member(user.id),
-	// };
+	let channel_id = fetch_guest_room(&ctx).await?;
 
-	// channel.create_permission(ctx, &permissions).await?;
+	let is_name_correct = expected_room_name
+		== channel_id
+			.name(&ctx)
+			.await
+			.unwrap_or_else(|| Default::default());
 
-	// ctx.say("Room access for provided user has been granted!")
-	// 	.await?;
+	if !is_name_correct {
+		channel_id
+			.edit(&ctx, |c| c.name(expected_room_name))
+			.await?;
+		ctx.say(format!(
+			"Room name for channel {} has been reset.",
+			channel_id.mention()
+		))
+		.await?;
+	}
 
 	Ok(())
 }
@@ -248,6 +238,8 @@ pub async fn close(ctx: Context<'_>) -> Result<()> {
 	Ok(())
 }
 
+/// Internal helper functions
+
 async fn fetch_guest_room(ctx: &Context<'_>) -> Result<ChannelId, anyhow::Error> {
 	let author_id_as_i64: i64 = unsafe { mem::transmute(ctx.author().id.0) };
 
@@ -267,4 +259,27 @@ async fn fetch_guest_room(ctx: &Context<'_>) -> Result<ChannelId, anyhow::Error>
 			let row_id: i64 = row.get(0);
 			ChannelId(unsafe { mem::transmute(row_id) })
 		})
+}
+
+async fn assign_role_to_member(ctx: &Context<'_>, role: &RoleId, user: &User) -> Result<()> {
+	log::debug!("Assigning role {} to member {}", role, user);
+	ctx.http()
+		.add_member_role(
+			ctx.guild_id()
+				.ok_or(anyhow!("Can only be called in a server."))?
+				.0,
+			user.id.into(),
+			(*role).into(),
+			Some("Automatically assigned role to member."),
+		)
+		.await?;
+	Ok(())
+}
+
+/// Generates a Discord voice channel name for a given user.
+/// For now only ascii alphanumeric characters are allowed.
+fn generate_room_name(user: &User) -> String {
+	let mut username = user.name.to_ascii_lowercase();
+	username.retain(|character| character.is_ascii_alphanumeric());
+	format!("room-{}", username)
 }
