@@ -15,9 +15,14 @@ use crate::types::Context;
 
 #[poise::command(
 	slash_command,
-	subcommands("create", "key_create", "key_revoke", "name_reset", "open", "close")
+	subcommands("create", "key", "name_reset", "open", "close")
 )]
 pub async fn room(_ctx: Context<'_>) -> Result<()> {
+	Ok(())
+}
+
+#[poise::command(slash_command, subcommands("key_create", "key_revoke"))]
+pub async fn key(_ctx: Context<'_>) -> Result<()> {
 	Ok(())
 }
 
