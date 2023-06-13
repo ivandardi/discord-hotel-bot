@@ -1,4 +1,4 @@
-name: Shuttle deploy
+name: "shuttle.rs deploy prod"
 
 on:
   push:
@@ -13,13 +13,15 @@ jobs:
       - name: "Checkout repository"
         uses: actions/checkout@v3
 
-      - name: "Set up cargo binstall"
-        run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-
       - name: "Install shuttle.rs CLI"
         run: |
-          cargo binstall cargo-shuttle
+          # using cargo-binstall because it is faster to get shuttle-cli binary
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y cargo-shuttle
+
+      - name: "Log into shuttle.rs"
+        run: |
+          cargo shuttle login --api-key ${{ secrets.SHUTTLE_DEPLOY_KEY }}
 
       - name: "Set up cargo cache"
         uses: Swatinem/rust-cache@v2
@@ -44,7 +46,6 @@ jobs:
           echo "DISCORD_ROLE_HOTEL_MEMBER=\"${{ vars.DISCORD_ROLE_HOTEL_MEMBER }}\"" >> Secrets.toml
           echo "DISCORD_CHANNEL_ALERTS=\"${{ vars.DISCORD_CHANNEL_ALERTS }}\"" >> Secrets.toml
 
-      - name: "Deploy on Shuttle.rs"
-        uses: "shuttle-hq/deploy-action@main"
-        with:
-          deploy-key: ${{ secrets.SHUTTLE_DEPLOY_KEY }}
+      - name: "Deploy to shuttle.rs"
+        run: |
+          cargo shuttle deploy | awk '!/Database URI.*?$/'
