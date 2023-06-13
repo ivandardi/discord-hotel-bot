@@ -74,7 +74,7 @@ pub async fn create(
 	let channel_id = channel.id.0;
 
 	let query_results =
-		sqlx::query("INSERT INTO user_channel_ownership (user_id, channel_id) VALUES ($1, $2)")
+		sqlx::query("INSERT INTO user_room_ownership (user_id, channel_id) VALUES ($1, $2)")
 			.bind::<i64>(unsafe { mem::transmute(user_id) })
 			.bind::<i64>(unsafe { mem::transmute(channel_id) })
 			.execute(&ctx.data().database)
@@ -243,7 +243,7 @@ pub async fn close(ctx: Context<'_>) -> Result<()> {
 async fn fetch_guest_room(ctx: &Context<'_>) -> Result<ChannelId, anyhow::Error> {
 	let author_id_as_i64: i64 = unsafe { mem::transmute(ctx.author().id.0) };
 
-	sqlx::query("SELECT channel_id FROM user_channel_ownership WHERE user_id = $1")
+	sqlx::query("SELECT channel_id FROM user_room_ownership WHERE user_id = $1")
 		.bind(author_id_as_i64)
 		.fetch_optional(&ctx.data().database)
 		.await
