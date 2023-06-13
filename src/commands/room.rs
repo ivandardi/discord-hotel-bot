@@ -15,7 +15,7 @@ use crate::types::Context;
 
 #[poise::command(
 	slash_command,
-	subcommands("create", "key", "name_reset", "open", "close")
+	subcommands("create", "key", "reset_name", "open", "close")
 )]
 pub async fn room(_ctx: Context<'_>) -> Result<()> {
 	Ok(())
@@ -36,7 +36,7 @@ pub async fn key(_ctx: Context<'_>) -> Result<()> {
 /// 1. Create an entry in the database with the created channel ID
 ///
 /// If any of these fail, they all need to be rolled back.
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn create(
 	ctx: Context<'_>,
 	#[description = "User who will get a room."] user: User,
@@ -115,7 +115,7 @@ pub async fn create(
 ///
 /// Enter `/room key_create <user>` to allow the specified user to read and send messages in your
 /// room.
-#[poise::command(slash_command)]
+#[poise::command(slash_command, rename = "create", ephemeral)]
 pub async fn key_create(
 	ctx: Context<'_>,
 	#[description = "User that will get a key"] user: User,
@@ -142,7 +142,7 @@ pub async fn key_create(
 ///
 /// Enter `/room key_revoke <user>` to disallow the specified user to read and send messages in your
 /// room.
-#[poise::command(slash_command)]
+#[poise::command(slash_command, rename = "revoke", ephemeral)]
 pub async fn key_revoke(
 	ctx: Context<'_>,
 	#[description = "User that will lose their key"] user: User,
@@ -167,9 +167,9 @@ pub async fn key_revoke(
 
 /// Resets the name of the room to the canonical one as defined by `generate_room_name()`.
 ///
-/// Enter `/room name_reset <user>`
-#[poise::command(slash_command)]
-pub async fn name_reset(
+/// Enter `/room reset_name <user>`
+#[poise::command(slash_command, ephemeral)]
+pub async fn reset_name(
 	ctx: Context<'_>,
 	#[description = "User whose room's name will be reset"] user: User,
 ) -> Result<()> {
@@ -200,7 +200,7 @@ pub async fn name_reset(
 /// Open a room's door, allowing everyone to view and connect.
 ///
 /// Enter `/room open` to open your room's door.
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn open(ctx: Context<'_>) -> Result<()> {
 	let channel_id = fetch_guest_room(&ctx).await?;
 
@@ -220,7 +220,7 @@ pub async fn open(ctx: Context<'_>) -> Result<()> {
 /// Close a room's door, denying everyone from viewing and connecting.
 ///
 /// Enter `/room close` to close your room's door.
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn close(ctx: Context<'_>) -> Result<()> {
 	let channel_id = fetch_guest_room(&ctx).await?;
 
