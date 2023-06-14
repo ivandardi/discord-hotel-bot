@@ -104,6 +104,9 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 		}
 		poise::FrameworkError::Command { error, ctx } => {
 			log::error!("Error in command `{}`: {:?}", ctx.command().name, error);
+			ctx.say(error.to_string())
+				.await
+				.expect("Error while sending error to user on Discord.");
 		}
 		error => {
 			if let Err(e) = poise::builtins::on_error(error).await {
