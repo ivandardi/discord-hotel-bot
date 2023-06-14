@@ -15,14 +15,25 @@ use crate::types::Context;
 
 #[poise::command(
 	slash_command,
-	subcommands("create", "key", "reset_name", "open", "close")
+	subcommands("create", "key", "reset", "open", "close"),
+	ephemeral
 )]
 pub async fn room(_ctx: Context<'_>) -> Result<()> {
 	Ok(())
 }
 
-#[poise::command(slash_command, subcommands("key_create", "key_revoke"))]
+#[poise::command(slash_command, subcommands("key_create", "key_revoke"), ephemeral)]
 pub async fn key(_ctx: Context<'_>) -> Result<()> {
+	Ok(())
+}
+
+#[poise::command(
+	slash_command,
+	subcommands("reset_name", "reset_room_id"),
+	owners_only,
+	ephemeral
+)]
+pub async fn reset(_ctx: Context<'_>) -> Result<()> {
 	Ok(())
 }
 
@@ -39,6 +50,8 @@ pub async fn key(_ctx: Context<'_>) -> Result<()> {
 /// If 1 fails, there's no rollback.
 /// If 2 fails, then the voice channel has to be deleted.
 /// If 3 fails, then both the voice channel and the database entry has to be deleted.
+///
+/// TODO: Actually delete the database entry.
 ///
 /// For now we're taking that route, but later on it's possible to let 3 fail and just add another
 /// way of users to obtain the Hotel Member role.
@@ -119,16 +132,16 @@ pub async fn create(
 	Ok(())
 }
 
-/// Create a new key for an existing room.
+/// Create a key for your room so that your friends can visit you.
 ///
-/// Enter `/room key_create <user>` to allow the specified user to read and send messages in your
+/// Enter `/room key create <user>` to allow the specified user to read and send messages in your
 /// room.
 #[poise::command(slash_command, rename = "create", ephemeral)]
 pub async fn key_create(
 	ctx: Context<'_>,
 	#[description = "User that will get a key"] user: User,
 ) -> Result<()> {
-	let channel_id = fetch_guest_room(&ctx).await?;
+	let channel_id = fetch_guest_room(&ctx, ctx.author()).await?;
 
 	let permission_overwrite = PermissionOverwrite {
 		allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
@@ -155,7 +168,7 @@ pub async fn key_revoke(
 	ctx: Context<'_>,
 	#[description = "User that will lose their key"] user: User,
 ) -> Result<()> {
-	let channel_id = fetch_guest_room(&ctx).await?;
+	let channel_id = fetch_guest_room(&ctx, ctx.author()).await?;
 
 	let permission_overwrite = PermissionOverwrite {
 		allow: Default::default(),
@@ -179,7 +192,7 @@ pub async fn key_revoke(
 /// whoever ran the command.
 ///
 /// Enter `/room reset_name [user]`.
-#[poise::command(slash_command, ephemeral)]
+#[poise::command(slash_command, ephemeral, rename = "name")]
 pub async fn reset_name(
 	ctx: Context<'_>,
 	#[description = "User whose room's name will be reset"] user: Option<User>,
@@ -188,7 +201,7 @@ pub async fn reset_name(
 
 	let expected_room_name = generate_room_name(user);
 
-	let channel_id = fetch_guest_room(&ctx).await?;
+	let channel_id = fetch_guest_room(&ctx, &user).await?;
 
 	let is_name_correct = expected_room_name
 		== channel_id
@@ -210,12 +223,49 @@ pub async fn reset_name(
 	Ok(())
 }
 
-/// Open a room's door, allowing everyone to view and connect.
+/// Resets the room ID of the user.
+///
+/// This will manually set the database entry into the ID passed. Use carefully!
+///
+/// Enter `/room reset_id <user> <channel_id>`.
+#[poise::command(slash_command, ephemeral, rename = "room_id")]
+pub async fn reset_room_id(
+	ctx: Context<'_>,
+	#[description = "User whose room's ID will be reset"] user: User,
+	#[description = "ID of the channel"] channel_id: u64,
+) -> Result<()> {
+	let user_id: i64 = unsafe { mem::transmute(user.id.0) };
+	let channel_id: i64 = unsafe { mem::transmute(channel_id) };
+
+	let query = "
+        UPDATE user_room_ownership
+        SET channel_id = $1
+        WHERE user_id = $2
+    ";
+
+	sqlx::query(query)
+		.bind(channel_id)
+		.bind(user_id)
+		.execute(&ctx.data().database)
+		.await
+		.map_err(|e| anyhow!("Failed to reset room ID: {}", e))?;
+
+	ctx.say(format!(
+		"Room ID for user {} has been reset to {}.",
+		user.mention(),
+		channel_id
+	))
+	.await?;
+
+	Ok(())
+}
+
+/// Open your room's door, allowing everyone to view and connect.
 ///
 /// Enter `/room open` to open your room's door.
 #[poise::command(slash_command, ephemeral)]
 pub async fn open(ctx: Context<'_>) -> Result<()> {
-	let channel_id = fetch_guest_room(&ctx).await?;
+	let channel_id = fetch_guest_room(&ctx, ctx.author()).await?;
 
 	let permissions = PermissionOverwrite {
 		allow: Permissions::VIEW_CHANNEL | Permissions::CONNECT,
@@ -230,12 +280,12 @@ pub async fn open(ctx: Context<'_>) -> Result<()> {
 	Ok(())
 }
 
-/// Close a room's door, denying everyone from viewing and connecting.
+/// Close your room's door, denying everyone from viewing and connecting.
 ///
 /// Enter `/room close` to close your room's door.
 #[poise::command(slash_command, ephemeral)]
 pub async fn close(ctx: Context<'_>) -> Result<()> {
-	let channel_id = fetch_guest_room(&ctx).await?;
+	let channel_id = fetch_guest_room(&ctx, ctx.author()).await?;
 
 	let permissions = PermissionOverwrite {
 		allow: Default::default(),
@@ -258,21 +308,15 @@ pub async fn close(ctx: Context<'_>) -> Result<()> {
 
 /// Internal helper functions
 
-async fn fetch_guest_room(ctx: &Context<'_>) -> Result<ChannelId, anyhow::Error> {
-	let author_id_as_i64: i64 = unsafe { mem::transmute(ctx.author().id.0) };
+async fn fetch_guest_room(ctx: &Context<'_>, user: &User) -> Result<ChannelId> {
+	let author_id_as_i64: i64 = unsafe { mem::transmute(user.id.0) };
 
 	sqlx::query("SELECT channel_id FROM user_room_ownership WHERE user_id = $1")
 		.bind(author_id_as_i64)
 		.fetch_optional(&ctx.data().database)
 		.await
-		.map_err(|e| {
-			anyhow!(
-				"Couldn't fetch room for user {}: {}",
-				ctx.author().mention(),
-				e
-			)
-		})?
-		.ok_or_else(|| anyhow!("User {} does not have a room.", ctx.author().mention()))
+		.map_err(|e| anyhow!("Couldn't fetch room for user {}: {}", user.mention(), e))?
+		.ok_or_else(|| anyhow!("User {} does not have a room.", user.mention()))
 		.map(|row| {
 			let row_id: i64 = row.get(0);
 			ChannelId(unsafe { mem::transmute(row_id) })
