@@ -28,18 +28,24 @@ pub async fn key(_ctx: Context<'_>) -> Result<()> {
 
 /// Create a new room for a guest.
 ///
-/// Enter `/room create <user>` to create a new room for a specified user.
+/// Enter `/room create [user]` to create a new room for a specified user, or yourself if you don't
+/// provide the user.
 ///
 /// This is a complicated command. It has the following responsibilities:
-/// 2. Add the appropriate role to the user
-/// 3. Create a new voice channel
-/// 1. Create an entry in the database with the created channel ID
+/// 1. Create a new voice channel
+/// 2. Create an entry in the database with the created channel ID
+/// 3. Add the appropriate role to the user
 ///
-/// If any of these fail, they all need to be rolled back.
+/// If 1 fails, there's no rollback.
+/// If 2 fails, then the voice channel has to be deleted.
+/// If 3 fails, then both the voice channel and the database entry has to be deleted.
+///
+/// For now we're taking that route, but later on it's possible to let 3 fail and just add another
+/// way of users to obtain the Hotel Member role.
 #[poise::command(slash_command, ephemeral)]
 pub async fn create(
 	ctx: Context<'_>,
-	#[description = "User who will get a room."] user: User,
+	#[description = "User who will get a room."] user: Option<User>,
 ) -> Result<()> {
 	async fn create_voice_channel(ctx: &Context<'_>, user: &User) -> Result<GuildChannel> {
 		let permissions = vec![
@@ -73,7 +79,9 @@ pub async fn create(
 			.map_err(|e| anyhow!("Failed to create channel: {e}"))
 	}
 
-	let channel = create_voice_channel(&ctx, &user).await?;
+	let user = user.as_ref().unwrap_or(ctx.author());
+
+	let channel = create_voice_channel(&ctx, user).await?;
 
 	let user_id = user.id.0;
 	let channel_id = channel.id.0;
@@ -165,15 +173,20 @@ pub async fn key_revoke(
 	Ok(())
 }
 
-/// Resets the name of the room to the canonical one as defined by `generate_room_name()`.
+/// Resets the name of a room back to the canonical one.
 ///
-/// Enter `/room reset_name <user>`
+/// The user passed is optional. If no user is provided, it will reset the name of the room of
+/// whoever ran the command.
+///
+/// Enter `/room reset_name [user]`.
 #[poise::command(slash_command, ephemeral)]
 pub async fn reset_name(
 	ctx: Context<'_>,
-	#[description = "User whose room's name will be reset"] user: User,
+	#[description = "User whose room's name will be reset"] user: Option<User>,
 ) -> Result<()> {
-	let expected_room_name = generate_room_name(&user);
+	let user = user.as_ref().unwrap_or(ctx.author());
+
+	let expected_room_name = generate_room_name(user);
 
 	let channel_id = fetch_guest_room(&ctx).await?;
 
