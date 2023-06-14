@@ -232,16 +232,19 @@ pub async fn reset_name(
 pub async fn reset_room_id(
 	ctx: Context<'_>,
 	#[description = "User whose room's ID will be reset"] user: User,
-	#[description = "ID of the channel"] channel_id: u64,
+	#[description = "ID of the channel"] channel_id: String,
 ) -> Result<()> {
 	let user_id: i64 = unsafe { mem::transmute(user.id.0) };
-	let channel_id: i64 = unsafe { mem::transmute(channel_id) };
+	let channel_id: i64 = {
+		let channel_id: u64 = channel_id.parse()?;
+		unsafe { mem::transmute(channel_id) }
+	};
 
 	let query = "
-        UPDATE user_room_ownership
-        SET channel_id = $1
-        WHERE user_id = $2
-    ";
+		UPDATE user_room_ownership
+		SET channel_id = $1
+		WHERE user_id = $2
+	";
 
 	sqlx::query(query)
 		.bind(channel_id)
